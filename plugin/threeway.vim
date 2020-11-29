@@ -1,6 +1,5 @@
-let g:threewayActiveDir = ''
-let g:threewayParentDir = ''
-let g:threewayPreviewPath = ''
+let g:threeway_active_dir = ''
+let g:threeway_parent_dir = ''
 
 command! Threeway :call threeway#Threeway(expand('%:p:h'))<CR>
 

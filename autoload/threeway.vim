@@ -1,4 +1,9 @@
-function! ListFiles(fileList)
+if exists('g:autoloaded_threeway')
+  finish
+endif
+let g:autoloaded_threeway = 1
+
+function! s:ListFiles(fileList)
   execute "normal! ggdG"
 
   for file in a:fileList
@@ -24,24 +29,24 @@ function! threeway#Threeway(path)
   " prevent buffers from being added to buffer list
   set nobuflisted
 
-  let g:threewayActiveDir = a:path
+  let g:threeway_active_dir = a:path
 
   tabnew
   vnew
   vnew
 
-  call GoWindowRight()
-  call UpdateActiveDir()
-  call UpdateParentDir()
-  call SetPreviewWindow(GetPathUnderCursor())
+  call s:GoWindowRight()
+  call s:UpdateActiveDir()
+  call s:UpdateParentDir()
+  call s:SetPreviewWindow(s:GetPathUnderCursor())
 endfunction
 
-function! GetDirContents(path)
+function! s:GetDirContents(path)
   " First glob returns paths that would otherwise be hidden, such as dotfiles
   return glob(a:path . "/.[^.]*", 1, 1) + globpath(a:path, '*', 1, 1)
 endfunction
 
-function! GetParentPath(currentPath)
+function! s:GetParentPath(currentPath)
   let pathParts = split(a:currentPath, '/')
   if (len(pathParts))
     call remove(pathParts, len(pathParts) - 1)
@@ -52,89 +57,89 @@ function! GetParentPath(currentPath)
   endif
 endfunction
 
-function! GetPathUnderCursor()
+function! s:GetPathUnderCursor()
   normal 0"ay$
   return @a
 endfunction
 
-function! GoWindowLeft()
+function! s:GoWindowLeft()
   execute "normal! \<C-w>h"
 endfunction
 
-function! GoWindowRight()
+function! s:GoWindowRight()
   execute "normal! \<C-w>l"
 endfunction
 
 function! threeway#HandleMoveLeft()
-  if (g:threewayParentDir != "/")
-    let g:threewayActiveDir = GetParentPath(g:threewayActiveDir)
-    call UpdateActiveDir()
-    call UpdateParentDir()
-    call SetPreviewWindow(GetPathUnderCursor())
+  if (g:threeway_parent_dir != "/")
+    let g:threeway_active_dir = s:GetParentPath(g:threeway_active_dir)
+    call s:UpdateActiveDir()
+    call s:UpdateParentDir()
+    call s:SetPreviewWindow(s:GetPathUnderCursor())
   endif
 endfunction
 
 function! threeway#HandleMoveDown()
   execute "normal! j"
-  let l:pathUnderCursor = GetPathUnderCursor()
-  call SetPreviewWindow(l:pathUnderCursor)
+  let l:pathUnderCursor = s:GetPathUnderCursor()
+  call s:SetPreviewWindow(l:pathUnderCursor)
 endfunction
 
 function! threeway#HandleMoveUp()
   execute "normal! k"
-  let l:pathUnderCursor = GetPathUnderCursor()
-  call SetPreviewWindow(l:pathUnderCursor)
+  let l:pathUnderCursor = s:GetPathUnderCursor()
+  call s:SetPreviewWindow(l:pathUnderCursor)
 endfunction
 
 function! threeway#HandleMoveRight()
-  let pathUnderCursor = GetPathUnderCursor()
+  let pathUnderCursor = s:GetPathUnderCursor()
   if (isdirectory(pathUnderCursor))
-    let g:threewayActiveDir = pathUnderCursor
-    call UpdateActiveDir()
-    call UpdateParentDir()
-    call SetPreviewWindow(GetPathUnderCursor())
+    let g:threeway_active_dir = pathUnderCursor
+    call s:UpdateActiveDir()
+    call s:UpdateParentDir()
+    call s:SetPreviewWindow(s:GetPathUnderCursor())
   else
     echo "OPEN!"
   endif
 endfunction
 
-" Assumes that g:threewayActiveDir has been updated, and is the focused window
-function! UpdateActiveDir()
-  call EnableBufferEdit()
-  call ListFiles(GetDirContents(g:threewayActiveDir))
-  call ConfigBuffer(1, '')
+" Assumes that g:threeway_active_dir has been updated, and is the focused window
+function! s:UpdateActiveDir()
+  call s:EnableBufferEdit()
+  call s:ListFiles(s:GetDirContents(g:threeway_active_dir))
+  call s:ConfigBuffer(1, '')
 endfunction
 
-" Assumes that g:threewayActiveDir has been updated, and is the focused window
-function! UpdateParentDir()
-  let g:threewayParentDir = GetParentPath(g:threewayActiveDir)
-  call GoWindowLeft()
-  call EnableBufferEdit()
-  let dirContents = GetDirContents(g:threewayParentDir)
-  if (g:threewayParentDir != "/")
-    call ListFiles(GetDirContents(g:threewayParentDir))
+" Assumes that g:threeway_active_dir has been updated, and is the focused window
+function! s:UpdateParentDir()
+  let g:threeway_parent_dir = s:GetParentPath(g:threeway_active_dir)
+  call s:GoWindowLeft()
+  call s:EnableBufferEdit()
+  let dirContents = s:GetDirContents(g:threeway_parent_dir)
+  if (g:threeway_parent_dir != "/")
+    call s:ListFiles(s:GetDirContents(g:threeway_parent_dir))
   else
     execute 'normal! ggdG'
     call setline('.', "/")
   endif
-  if (g:threewayParentDir != "/")
-    let highlightedStr = split(g:threewayActiveDir, "/")[-1] . "/"
+  if (g:threeway_parent_dir != "/")
+    let highlightedStr = split(g:threeway_active_dir, "/")[-1] . "/"
     echo("CURRENT " . highlightedStr)
-    call ConfigBuffer(1, highlightedStr)
+    call s:ConfigBuffer(1, highlightedStr)
   else
-    call ConfigBuffer(1, '')
+    call s:ConfigBuffer(1, '')
   endif
-  call GoWindowRight()
+  call s:GoWindowRight()
 endfunction
 
-" Assumes that g:threewayActiveDir has been updated, and is the focused window
-function! SetPreviewWindow(path)
-  call GoWindowRight()
-  call EnableBufferEdit()
+" Assumes that g:threeway_active_dir has been updated, and is the focused window
+function! s:SetPreviewWindow(path)
+  call s:GoWindowRight()
+  call s:EnableBufferEdit()
   if (isdirectory(a:path))
-    let dirContents = GetDirContents(a:path)
+    let dirContents = s:GetDirContents(a:path)
     if (len(dirContents) > 0)
-      call ListFiles(dirContents)
+      call s:ListFiles(dirContents)
     else
       execute 'normal! ggdG'
       call setline('.', "empty directory")
@@ -144,12 +149,12 @@ function! SetPreviewWindow(path)
     execute 'read' a:path
     execute 'normal! ggdd'
   endif
-  call ConfigBuffer(0, '')
+  call s:ConfigBuffer(0, '')
   setlocal syntax=off
-  call GoWindowLeft()
+  call s:GoWindowLeft()
 endfunction
 
-function! ConfigBuffer(isDir, highlightedStr)
+function! s:ConfigBuffer(isDir, highlightedStr)
   setlocal readonly
   setlocal nomodifiable
   setlocal nobuflisted
@@ -169,7 +174,7 @@ function! ConfigBuffer(isDir, highlightedStr)
   endif
 endfunction
 
-function! EnableBufferEdit()
+function! s:EnableBufferEdit()
   setlocal noreadonly
   setlocal modifiable
 endfunction
