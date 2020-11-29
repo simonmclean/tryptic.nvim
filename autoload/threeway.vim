@@ -3,7 +3,7 @@ if exists('g:autoloaded_threeway')
 endif
 let g:autoloaded_threeway = 1
 
-function! s:ListFiles(fileList)
+function! s:PrintDirContents(fileList)
   execute "normal! ggdG"
 
   for file in a:fileList
@@ -72,8 +72,8 @@ endfunction
 function! threeway#HandleMoveLeft()
   if (g:threeway_parent_dir != "/")
     let g:threeway_active_dir = s:GetParentPath(g:threeway_active_dir)
-    call s:UpdateActiveDir()
     call s:UpdateParentDir()
+    call s:UpdateActiveDir()
     call s:SetPreviewWindow(s:GetPathUnderCursor())
   endif
 endfunction
@@ -94,8 +94,8 @@ function! threeway#HandleMoveRight()
   let pathUnderCursor = s:GetPathUnderCursor()
   if (isdirectory(pathUnderCursor))
     let g:threeway_active_dir = pathUnderCursor
-    call s:UpdateActiveDir()
     call s:UpdateParentDir()
+    call s:UpdateActiveDir()
     call s:SetPreviewWindow(s:GetPathUnderCursor())
   else
     echo "OPEN!"
@@ -105,7 +105,8 @@ endfunction
 " Assumes that g:threeway_active_dir has been updated, and is the focused window
 function! s:UpdateActiveDir()
   call s:EnableBufferEdit()
-  call s:ListFiles(s:GetDirContents(g:threeway_active_dir))
+  call s:PrintDirContents(s:GetDirContents(g:threeway_active_dir))
+  call s:RenameBuffer(g:threeway_active_dir)
   call s:ConfigBuffer(1, '')
 endfunction
 
@@ -116,14 +117,14 @@ function! s:UpdateParentDir()
   call s:EnableBufferEdit()
   let dirContents = s:GetDirContents(g:threeway_parent_dir)
   if (g:threeway_parent_dir != "/")
-    call s:ListFiles(s:GetDirContents(g:threeway_parent_dir))
+    call s:PrintDirContents(s:GetDirContents(g:threeway_parent_dir))
   else
     execute 'normal! ggdG'
     call setline('.', "/")
   endif
+  call s:RenameBuffer(g:threeway_parent_dir)
   if (g:threeway_parent_dir != "/")
     let highlightedStr = split(g:threeway_active_dir, "/")[-1] . "/"
-    echo("CURRENT " . highlightedStr)
     call s:ConfigBuffer(1, highlightedStr)
   else
     call s:ConfigBuffer(1, '')
@@ -135,21 +136,23 @@ endfunction
 function! s:SetPreviewWindow(path)
   call s:GoWindowRight()
   call s:EnableBufferEdit()
-  if (isdirectory(a:path))
+  let isDir = isdirectory(a:path)
+  if (isDir)
     let dirContents = s:GetDirContents(a:path)
     if (len(dirContents) > 0)
-      call s:ListFiles(dirContents)
+      call s:PrintDirContents(dirContents)
     else
       execute 'normal! ggdG'
       call setline('.', "empty directory")
     endif
   else
     execute 'normal! ggdG'
-    execute 'read' a:path
-    execute 'normal! ggdd'
+    execute 'edit' . a:path
+    " execute 'read' a:path
+    " execute 'normal! ggdd'
+    setlocal syntax=off
   endif
   call s:ConfigBuffer(0, '')
-  setlocal syntax=off
   call s:GoWindowLeft()
 endfunction
 
@@ -166,11 +169,15 @@ function! s:ConfigBuffer(isDir, highlightedStr)
     syntax match PathExcludingFileName /^\/.*\/.\@=/ conceal
 
     if (len(a:highlightedStr) > 0)
-      echo("HI " . a:highlightedStr)
       execute "syntax match HighlightedDir '" . a:highlightedStr . "'"
       highlight link HighlightedDir Search
     endif
   endif
+endfunction
+
+function! s:RenameBuffer(name)
+  execute "0file!"
+  execute "file!" . a:name
 endfunction
 
 function! s:EnableBufferEdit()
