@@ -22,7 +22,6 @@ endfunction
 " - any number of any chars up to last / inclusive
 " - exclude / from the above if it isn't followed by any chars
 syntax match PathExcludingFileName /^\/.*\/.\@=/ conceal
-" highlight link PathExcludingFileName ErrorMsg
 
 function! threeway#Threeway(path)
 
