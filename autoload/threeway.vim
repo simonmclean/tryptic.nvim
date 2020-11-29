@@ -17,10 +17,10 @@ function! s:ListFiles(fileList)
   execute "normal! ggdd"
 endfunction
 
-" starts with /
-" any number of any chars up to / inclusive
-" if the / is followed by any chars
-" let concealPattern = /^\/.*\/.\@=/
+" regex description:
+" - starts with /
+" - any number of any chars up to last / inclusive
+" - exclude / from the above if it isn't followed by any chars
 syntax match PathExcludingFileName /^\/.*\/.\@=/ conceal
 " highlight link PathExcludingFileName ErrorMsg
 
