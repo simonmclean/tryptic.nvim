@@ -24,11 +24,8 @@ endfunction
 syntax match PathExcludingFileName /^\/.*\/.\@=/ conceal
 
 function! threeway#Threeway(path)
-
-  " prevent buffers from being added to buffer list
-  set nobuflisted
-
   let g:threeway_active_dir = a:path
+  let g:threeway_target_tab = tabpagenr()
 
   tabnew
   vnew
@@ -98,7 +95,9 @@ function! threeway#HandleMoveRight()
     call s:UpdateActiveDir()
     call s:SetPreviewWindow(s:GetPathUnderCursor())
   else
-    echo "OPEN!"
+    execute "tabclose"
+    execute "normal!" . g:threeway_target_tab . "gT"
+    execute "edit" . pathUnderCursor
   endif
 endfunction
 
@@ -147,9 +146,9 @@ function! s:SetPreviewWindow(path)
     endif
   else
     execute 'normal! ggdG'
-    execute 'edit' . a:path
-    " execute 'read' a:path
-    " execute 'normal! ggdd'
+    " execute 'edit' . a:path
+    execute 'read' a:path
+    execute 'normal! ggdd'
     setlocal syntax=off
   endif
   call s:ConfigBuffer(0, '')
@@ -175,9 +174,10 @@ function! s:ConfigBuffer(isDir, highlightedStr)
   endif
 endfunction
 
+" IDEA: Just open the directory instead of faffing about with naming!!!
 function! s:RenameBuffer(name)
-  execute "0file!"
-  execute "file!" . a:name
+  " execute "0file!"
+  " execute "file!" . a:name
 endfunction
 
 function! s:EnableBufferEdit()

@@ -8,6 +8,7 @@ augroup threeway
 
   let g:threeway_active_dir = ''
   let g:threeway_parent_dir = ''
+  let g:threeway_target_tab = ''
 
   command! Threeway :call threeway#Threeway(expand('%:p:h'))<CR>
 
