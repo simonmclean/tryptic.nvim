@@ -1,5 +1,5 @@
 if exists('g:threeway_loaded')
-  finished
+  finish
 endif
 let g:threeway_loaded = 1
 
