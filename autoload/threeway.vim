@@ -95,17 +95,21 @@ function! threeway#HandleMoveRight()
     call s:UpdateActiveDir()
     call s:SetPreviewWindow(s:GetPathUnderCursor())
   else
-    execute "tabclose"
-    execute "normal!" . g:threeway_target_tab . "gT"
-    execute "edit" . pathUnderCursor
+    call s:OpenFile(pathUnderCursor)
   endif
+endfunction
+
+function! s:OpenFile(filePath)
+  execute "tabclose"
+  execute "normal!" . g:threeway_target_tab . "gT"
+  execute "edit" . a:filePath
 endfunction
 
 " Assumes that g:threeway_active_dir has been updated, and is the focused window
 function! s:UpdateActiveDir()
+  execute "edit!" . g:threeway_active_dir
   call s:EnableBufferEdit()
   call s:PrintDirContents(s:GetDirContents(g:threeway_active_dir))
-  call s:RenameBuffer(g:threeway_active_dir)
   call s:ConfigBuffer(1, '')
 endfunction
 
@@ -113,6 +117,7 @@ endfunction
 function! s:UpdateParentDir()
   let g:threeway_parent_dir = s:GetParentPath(g:threeway_active_dir)
   call s:GoWindowLeft()
+  execute "edit!" . g:threeway_parent_dir
   call s:EnableBufferEdit()
   let dirContents = s:GetDirContents(g:threeway_parent_dir)
   if (g:threeway_parent_dir != "/")
@@ -121,7 +126,6 @@ function! s:UpdateParentDir()
     execute 'normal! ggdG'
     call setline('.', "/")
   endif
-  call s:RenameBuffer(g:threeway_parent_dir)
   if (g:threeway_parent_dir != "/")
     let highlightedStr = split(g:threeway_active_dir, "/")[-1] . "/"
     call s:ConfigBuffer(1, highlightedStr)
@@ -134,22 +138,22 @@ endfunction
 " Assumes that g:threeway_active_dir has been updated, and is the focused window
 function! s:SetPreviewWindow(path)
   call s:GoWindowRight()
-  call s:EnableBufferEdit()
   let isDir = isdirectory(a:path)
   if (isDir)
     let dirContents = s:GetDirContents(a:path)
     if (len(dirContents) > 0)
+      execute "edit!" . a:path
+      call s:EnableBufferEdit()
       call s:PrintDirContents(dirContents)
     else
+      call s:EnableBufferEdit()
       execute 'normal! ggdG'
       call setline('.', "empty directory")
     endif
   else
-    execute 'normal! ggdG'
-    " execute 'edit' . a:path
-    execute 'read' a:path
-    execute 'normal! ggdd'
-    setlocal syntax=off
+    enew
+    call s:EnableBufferEdit()
+    execute 'read' . a:path
   endif
   call s:ConfigBuffer(0, '')
   call s:GoWindowLeft()
@@ -172,12 +176,6 @@ function! s:ConfigBuffer(isDir, highlightedStr)
       highlight link HighlightedDir Search
     endif
   endif
-endfunction
-
-" IDEA: Just open the directory instead of faffing about with naming!!!
-function! s:RenameBuffer(name)
-  " execute "0file!"
-  " execute "file!" . a:name
 endfunction
 
 function! s:EnableBufferEdit()
