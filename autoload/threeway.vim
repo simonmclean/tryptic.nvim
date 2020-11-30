@@ -162,6 +162,7 @@ function! s:SetPreviewWindow(path)
     enew
     call s:EnableBufferEdit()
     execute 'read' . a:path
+    execute "normal! ggdd"
     call s:ConfigBuffer(0, '')
   endif
   call s:GoWindowLeft()
