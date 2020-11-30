@@ -17,12 +17,6 @@ function! s:PrintDirContents(fileList)
   execute "normal! ggdd"
 endfunction
 
-" regex description:
-" - starts with /
-" - any number of any chars up to last / inclusive
-" - exclude / from the above if it isn't followed by any chars
-syntax match PathExcludingFileName /^\/.*\/.\@=/ conceal
-
 function! threeway#Threeway(path)
   let g:threeway_active_dir = a:path
   let g:threeway_target_tab = tabpagenr()
@@ -182,11 +176,15 @@ function! s:ConfigBuffer(isDir, highlightedStr)
 
   if (a:isDir)
     setlocal filetype=threeway
+
+    " regex description:
+    " - starts with /
+    " - any number of any chars up to last / inclusive
+    " - exclude / from the above if it isn't followed by any chars
     syntax match PathExcludingFileName /^\/.*\/.\@=/ conceal
 
     if (len(a:highlightedStr) > 0)
-      execute "syntax match HighlightedDir '" . a:highlightedStr . "'"
-      highlight link HighlightedDir Search
+      call search(a:highlightedStr)
     endif
   endif
 endfunction
