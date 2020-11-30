@@ -155,14 +155,15 @@ function! s:SetPreviewWindow(path)
     else
       call s:EnableBufferEdit()
       execute 'normal! ggdG'
-      call setline('.', "empty directory")
+      call setline('.', "[empty directory]")
     endif
+    call s:ConfigBuffer(1, '')
   else
     enew
     call s:EnableBufferEdit()
     execute 'read' . a:path
+    call s:ConfigBuffer(0, '')
   endif
-  call s:ConfigBuffer(0, '')
   call s:GoWindowLeft()
 endfunction
 
