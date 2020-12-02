@@ -6,7 +6,6 @@ let g:autoloaded_threeway = 1
 let s:threeway_active_dir = ''
 let s:threeway_parent_dir = ''
 let s:threeway_target_tab = ''
-let s:threeway_show_hidden_files = 0
 
 function! s:PrintDirContents(fileList)
   execute "normal! ggdG"
@@ -37,7 +36,7 @@ function! threeway#Threeway(path)
 endfunction
 
 function! threeway#ToggleHidden()
-  let s:threeway_show_hidden_files = !s:threeway_show_hidden_files
+  let g:threeway_show_hidden_files = !g:threeway_show_hidden_files
   call s:UpdateActiveDir()
   call s:UpdateParentDir()
   call s:SetPreviewWindow(s:GetPathUnderCursor())
@@ -47,7 +46,7 @@ function! s:GetDirContents(path)
   " First glob returns paths that would otherwise be hidden, such as dotfiles
   let hidden_files = glob(a:path . "/.[^.]*", 1, 1)
   let non_hidden_files = globpath(a:path, '*', 1, 1)
-  if (s:threeway_show_hidden_files)
+  if (g:threeway_show_hidden_files)
     return hidden_files + non_hidden_files
   else
     return non_hidden_files

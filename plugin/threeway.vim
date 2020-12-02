@@ -3,6 +3,8 @@ if exists('g:threeway_loaded')
 endif
 let g:threeway_loaded = 1
 
+let g:threeway_show_hidden_files = 0
+
 augroup threeway
   autocmd!
 
