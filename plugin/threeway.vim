@@ -6,11 +6,6 @@ let g:threeway_loaded = 1
 augroup threeway
   autocmd!
 
-  let g:threeway_active_dir = ''
-  let g:threeway_parent_dir = ''
-  let g:threeway_target_tab = ''
-  let g:threeway_show_hidden_files = 0
-
   command! Threeway :call threeway#Threeway(expand('%:p:h'))<CR>
 
   " Remove netrw and NERDTree directory handlers.

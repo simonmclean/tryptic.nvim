@@ -3,6 +3,11 @@ if exists('g:autoloaded_threeway')
 endif
 let g:autoloaded_threeway = 1
 
+let s:threeway_active_dir = ''
+let s:threeway_parent_dir = ''
+let s:threeway_target_tab = ''
+let s:threeway_show_hidden_files = 0
+
 function! s:PrintDirContents(fileList)
   execute "normal! ggdG"
 
@@ -18,8 +23,8 @@ function! s:PrintDirContents(fileList)
 endfunction
 
 function! threeway#Threeway(path)
-  let g:threeway_active_dir = a:path
-  let g:threeway_target_tab = tabpagenr()
+  let s:threeway_active_dir = a:path
+  let s:threeway_target_tab = tabpagenr()
 
   tabnew
   vnew
@@ -32,7 +37,7 @@ function! threeway#Threeway(path)
 endfunction
 
 function! threeway#ToggleHidden()
-  let g:threeway_show_hidden_files = !g:threeway_show_hidden_files
+  let s:threeway_show_hidden_files = !s:threeway_show_hidden_files
   call s:UpdateActiveDir()
   call s:UpdateParentDir()
   call s:SetPreviewWindow(s:GetPathUnderCursor())
@@ -42,7 +47,7 @@ function! s:GetDirContents(path)
   " First glob returns paths that would otherwise be hidden, such as dotfiles
   let hidden_files = glob(a:path . "/.[^.]*", 1, 1)
   let non_hidden_files = globpath(a:path, '*', 1, 1)
-  if (g:threeway_show_hidden_files)
+  if (s:threeway_show_hidden_files)
     return hidden_files + non_hidden_files
   else
     return non_hidden_files
@@ -74,8 +79,8 @@ function! s:GoWindowRight()
 endfunction
 
 function! threeway#HandleMoveLeft()
-  if (g:threeway_parent_dir != "/")
-    let g:threeway_active_dir = s:GetParentPath(g:threeway_active_dir)
+  if (s:threeway_parent_dir != "/")
+    let s:threeway_active_dir = s:GetParentPath(s:threeway_active_dir)
     call s:UpdateParentDir()
     call s:UpdateActiveDir()
     call s:SetPreviewWindow(s:GetPathUnderCursor())
@@ -97,7 +102,7 @@ endfunction
 function! threeway#HandleMoveRight()
   let pathUnderCursor = s:GetPathUnderCursor()
   if (isdirectory(pathUnderCursor))
-    let g:threeway_active_dir = pathUnderCursor
+    let s:threeway_active_dir = pathUnderCursor
     call s:UpdateParentDir()
     call s:UpdateActiveDir()
     call s:SetPreviewWindow(s:GetPathUnderCursor())
@@ -108,33 +113,33 @@ endfunction
 
 function! s:OpenFile(filePath)
   execute "tabclose"
-  execute "normal!" . g:threeway_target_tab . "gT"
+  execute "normal!" . s:threeway_target_tab . "gT"
   execute "edit" . a:filePath
 endfunction
 
-" Assumes that g:threeway_active_dir has been updated, and is the focused window
+" Assumes that s:threeway_active_dir has been updated, and is the focused window
 function! s:UpdateActiveDir()
-  execute "edit!" . g:threeway_active_dir
+  execute "edit!" . s:threeway_active_dir
   call s:EnableBufferEdit()
-  call s:PrintDirContents(s:GetDirContents(g:threeway_active_dir))
+  call s:PrintDirContents(s:GetDirContents(s:threeway_active_dir))
   call s:ConfigBuffer(1, '')
 endfunction
 
-" Assumes that g:threeway_active_dir has been updated, and is the focused window
+" Assumes that s:threeway_active_dir has been updated, and is the focused window
 function! s:UpdateParentDir()
-  let g:threeway_parent_dir = s:GetParentPath(g:threeway_active_dir)
+  let s:threeway_parent_dir = s:GetParentPath(s:threeway_active_dir)
   call s:GoWindowLeft()
-  execute "edit!" . g:threeway_parent_dir
+  execute "edit!" . s:threeway_parent_dir
   call s:EnableBufferEdit()
-  let dirContents = s:GetDirContents(g:threeway_parent_dir)
-  if (g:threeway_parent_dir != "/")
-    call s:PrintDirContents(s:GetDirContents(g:threeway_parent_dir))
+  let dirContents = s:GetDirContents(s:threeway_parent_dir)
+  if (s:threeway_parent_dir != "/")
+    call s:PrintDirContents(s:GetDirContents(s:threeway_parent_dir))
   else
     execute 'normal! ggdG'
     call setline('.', "/")
   endif
-  if (g:threeway_parent_dir != "/")
-    let highlightedStr = split(g:threeway_active_dir, "/")[-1] . "/"
+  if (s:threeway_parent_dir != "/")
+    let highlightedStr = split(s:threeway_active_dir, "/")[-1] . "/"
     call s:ConfigBuffer(1, highlightedStr)
   else
     call s:ConfigBuffer(1, '')
@@ -142,7 +147,7 @@ function! s:UpdateParentDir()
   call s:GoWindowRight()
 endfunction
 
-" Assumes that g:threeway_active_dir has been updated, and is the focused window
+" Assumes that s:threeway_active_dir has been updated, and is the focused window
 function! s:SetPreviewWindow(path)
   call s:GoWindowRight()
   let isDir = isdirectory(a:path)
