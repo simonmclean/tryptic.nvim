@@ -153,20 +153,20 @@ function! s:SetPreviewWindow(path)
   if (isDir)
     let dirContents = s:GetDirContents(a:path)
     if (len(dirContents) > 0)
-      execute "edit!" . a:path
+      execute 'edit!' . a:path
       call s:EnableBufferEdit()
       call s:PrintDirContents(dirContents)
     else
       call s:EnableBufferEdit()
       execute 'normal! ggdG'
-      call setline('.', "[empty directory]")
+      call setline('.', '[empty directory]')
     endif
     call s:ConfigBuffer(1, '')
   else
     enew
     call s:EnableBufferEdit()
     execute 'read' . a:path
-    execute "normal! ggdd"
+    execute 'normal! ggdd'
     call s:ConfigBuffer(0, '')
   endif
   call s:GoWindowLeft()
