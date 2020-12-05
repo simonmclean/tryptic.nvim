@@ -13,7 +13,7 @@ let s:threeway_active_win = ''
 let s:threeway_parent_win = ''
 let s:threeway_preview_win = ''
 
-" Text
+" Special text
 let s:threeway_empty_dir_text = "[empty directory]"
 
 " Directory contents
@@ -40,9 +40,7 @@ function! threeway#Threeway(path)
   call s:UpdateParentDir()
   call s:UpdatePreviewWindow()
 
-  if (starting_file)
-    call search(starting_file)
-  endif
+  call search(starting_file)
 endfunction
 
 function! threeway#ToggleHidden()
