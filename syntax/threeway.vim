@@ -1,0 +1,2 @@
+syntax match PathExcludingFileName /^\/.*\/.\@=/ conceal
+

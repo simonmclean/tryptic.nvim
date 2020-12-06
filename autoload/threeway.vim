@@ -26,7 +26,8 @@ let s:threeway_target_tab = ''
 function! threeway#Threeway(path)
   let s:threeway_active_dir = a:path
   let s:threeway_target_tab = tabpagenr()
-  let starting_file = expand('%')
+  let l:starting_file = expand('%:p')
+  " let l:content = luaeval('require("threeway").readFile('. l:starting_file .')')
 
   tabnew
   let s:threeway_preview_win = nvim_get_current_win()
@@ -35,12 +36,18 @@ function! threeway#Threeway(path)
   vnew
   let s:threeway_parent_win = nvim_get_current_win()
 
+  let l:windows = [s:threeway_parent_win, s:threeway_active_win, s:threeway_preview_win]
+  for l:win in l:windows
+    call nvim_win_set_option(l:win, 'conceallevel', 2)
+    call nvim_win_set_option(l:win, 'concealcursor', 'n')
+  endfor
+
   call nvim_set_current_win(s:threeway_active_win)
   call s:UpdateActiveDir()
   call s:UpdateParentDir()
   call s:UpdatePreviewWindow()
 
-  call search(starting_file)
+  call search(l:starting_file)
 endfunction
 
 function! threeway#ToggleHidden()
@@ -152,8 +159,8 @@ endfunction
 function! s:UpdateActiveDir()
   let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:threeway_active_dir)
   let s:threeway_active_dir_contents = dir_contents
-  call s:LockBuffer(buffer_handle)
   call nvim_win_set_buf(s:threeway_active_win, buffer_handle)
+  call s:LockBuffer(buffer_handle)
 endfunction
 
 function! s:UpdateParentDir()
@@ -164,8 +171,8 @@ function! s:UpdateParentDir()
   if (index_of_active_dir > -1)
     call nvim_buf_add_highlight(buffer_handle, -1, 'Search', index_of_active_dir, 0, -1)
   endif
-  call s:LockBuffer(buffer_handle)
   call nvim_win_set_buf(s:threeway_parent_win, buffer_handle)
+  call s:LockBuffer(buffer_handle)
 endfunction
 
 function! s:UpdatePreviewWindow()
@@ -178,6 +185,6 @@ function! s:UpdatePreviewWindow()
   else
     let buffer_handle = s:CreateFileBuffer(path)
   endif
-  call s:LockBuffer(buffer_handle)
   call nvim_win_set_buf(s:threeway_preview_win, buffer_handle)
+  call s:LockBuffer(buffer_handle)
 endfunction
