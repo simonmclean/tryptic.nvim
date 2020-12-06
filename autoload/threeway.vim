@@ -43,18 +43,20 @@ function! threeway#Threeway(path)
   endfor
 
   call nvim_set_current_win(s:threeway_active_win)
-  call s:UpdateActiveDir()
-  call s:UpdateParentDir()
-  call s:UpdatePreviewWindow()
+  call s:UpdateAll()
 
   call search(l:starting_file)
 endfunction
 
-function! threeway#ToggleHidden()
-  let g:threeway_show_hidden_files = !g:threeway_show_hidden_files
+function! s:UpdateAll()
   call s:UpdateActiveDir()
   call s:UpdateParentDir()
   call s:UpdatePreviewWindow()
+endfunction
+
+function! threeway#ToggleHidden()
+  let g:threeway_show_hidden_files = !g:threeway_show_hidden_files
+  call s:UpdateAll()
 endfunction
 
 function! s:GetDirContents(path)
@@ -98,9 +100,7 @@ endfunction
 function! threeway#HandleMoveLeft()
   if (s:threeway_parent_dir != "/")
     let s:threeway_active_dir = s:GetParentPath(s:threeway_active_dir)
-    call s:UpdateParentDir()
-    call s:UpdateActiveDir()
-    call s:UpdatePreviewWindow()
+    call s:UpdateAll()
   endif
 endfunction
 
@@ -109,9 +109,7 @@ function! threeway#HandleMoveRight()
   if (pathUnderCursor != s:threeway_empty_dir_text)
     if (isdirectory(pathUnderCursor))
       let s:threeway_active_dir = pathUnderCursor
-      call s:UpdateParentDir()
-      call s:UpdateActiveDir()
-      call s:UpdatePreviewWindow()
+      call s:UpdateAll()
     else
       call s:OpenFile(pathUnderCursor)
     endif
