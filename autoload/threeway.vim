@@ -3,46 +3,50 @@ if exists('g:autoloaded_threeway')
 endif
 let g:autoloaded_threeway = 1
 
-" Paths
-let s:threeway_active_dir = ''
-let s:threeway_parent_dir = ''
-let s:threeway_preview_path = ''
-
-" Window handles
-let s:threeway_active_win = ''
-let s:threeway_parent_win = ''
-let s:threeway_preview_win = ''
+let s:state = {
+  \ 'active': {
+    \ 'path': '',
+    \ 'win': '',
+    \ 'buf': '',
+    \ 'contents': '',
+  \},
+  \ 'parent': {
+    \ 'path': '',
+    \ 'win': '',
+    \ 'buf': '',
+    \ 'contents': '',
+  \},
+  \ 'preview': {
+    \ 'path': '',
+    \ 'win': '',
+    \ 'buf': '',
+  \},
+  \ 'target_tab': '',
+\}
 
 " Special text
 let s:threeway_empty_dir_text = "[empty directory]"
 
-" Directory contents
-let s:threeway_active_dir_contents = []
-let s:threeway_parent_dir_contents = []
-
-" Tab where Threeway was called from
-let s:threeway_target_tab = ''
-
 function! threeway#Threeway(path)
-  let s:threeway_active_dir = a:path
-  let s:threeway_target_tab = tabpagenr()
+  let s:state.active.path = a:path
+  let s:state.target_tab = tabpagenr()
   let l:starting_file = expand('%:p')
   " let l:content = luaeval('require("threeway").readFile('. l:starting_file .')')
 
   tabnew
-  let s:threeway_preview_win = nvim_get_current_win()
+  let s:state.preview.win = nvim_get_current_win()
   vnew
-  let s:threeway_active_win = nvim_get_current_win()
+  let s:state.active.win = nvim_get_current_win()
   vnew
-  let s:threeway_parent_win = nvim_get_current_win()
+  let s:state.parent.win = nvim_get_current_win()
 
-  let l:windows = [s:threeway_parent_win, s:threeway_active_win, s:threeway_preview_win]
+  let l:windows = [s:state.parent.win, s:state.active.win, s:state.preview.win]
   for l:win in l:windows
     call nvim_win_set_option(l:win, 'conceallevel', 2)
     call nvim_win_set_option(l:win, 'concealcursor', 'n')
   endfor
 
-  call nvim_set_current_win(s:threeway_active_win)
+  call nvim_set_current_win(s:state.active.win)
   call s:UpdateAll()
 
   call search(l:starting_file)
@@ -83,7 +87,7 @@ endfunction
 
 function! threeway#HandleMoveDown()
   let current_cursor_pos = nvim_win_get_cursor(0)
-  if (current_cursor_pos[0] < len(s:threeway_active_dir_contents))
+  if (current_cursor_pos[0] < len(s:state.active.contents))
     call nvim_win_set_cursor(0, [current_cursor_pos[0] + 1, current_cursor_pos[1]])
     call s:UpdatePreviewWindow()
   endif
@@ -98,8 +102,8 @@ function! threeway#HandleMoveUp()
 endfunction
 
 function! threeway#HandleMoveLeft()
-  if (s:threeway_parent_dir != "/")
-    let s:threeway_active_dir = s:GetParentPath(s:threeway_active_dir)
+  if (s:state.parent.path != "/")
+    let s:state.active.path = s:GetParentPath(s:state.active.path)
     call s:UpdateAll()
   endif
 endfunction
@@ -108,7 +112,7 @@ function! threeway#HandleMoveRight()
   let pathUnderCursor = nvim_get_current_line()
   if (pathUnderCursor != s:threeway_empty_dir_text)
     if (isdirectory(pathUnderCursor))
-      let s:threeway_active_dir = pathUnderCursor
+      let s:state.active.path = pathUnderCursor
       call s:UpdateAll()
     else
       call s:OpenFile(pathUnderCursor)
@@ -118,7 +122,7 @@ endfunction
 
 function! s:OpenFile(filePath)
   execute "tabclose"
-  execute "normal!" . s:threeway_target_tab . "gT"
+  execute "normal!" . s:state.target_tab . "gT"
   execute "edit" . a:filePath
 endfunction
 
@@ -151,25 +155,25 @@ function! s:LockBuffer(buffer_handle)
   call nvim_buf_set_option(a:buffer_handle, 'modifiable', v:false)
 endfunction
 
-" Assumes that s:threeway_active_dir has been updated
+" Assumes that s:state.active.path has been updated
 " TODO: Maybe pass in and set the value, rather than assuming it's already
 " been set
 function! s:UpdateActiveDir()
-  let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:threeway_active_dir)
-  let s:threeway_active_dir_contents = dir_contents
-  call nvim_win_set_buf(s:threeway_active_win, buffer_handle)
+  let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.active.path)
+  let s:state.active.contents = dir_contents
+  call nvim_win_set_buf(s:state.active.win, buffer_handle)
   call s:LockBuffer(buffer_handle)
 endfunction
 
 function! s:UpdateParentDir()
-  let s:threeway_parent_dir = s:GetParentPath(s:threeway_active_dir)
-  let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:threeway_parent_dir)
-  let s:threeway_parent_dir_contents = dir_contents
-  let index_of_active_dir = index(s:threeway_parent_dir_contents, s:threeway_active_dir)
+  let s:state.parent.path = s:GetParentPath(s:state.active.path)
+  let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.parent.path)
+  let s:state.parent.contents = dir_contents
+  let index_of_active_dir = index(s:state.parent.contents, s:state.active.path)
   if (index_of_active_dir > -1)
     call nvim_buf_add_highlight(buffer_handle, -1, 'Search', index_of_active_dir, 0, -1)
   endif
-  call nvim_win_set_buf(s:threeway_parent_win, buffer_handle)
+  call nvim_win_set_buf(s:state.parent.win, buffer_handle)
   call s:LockBuffer(buffer_handle)
 endfunction
 
@@ -183,6 +187,6 @@ function! s:UpdatePreviewWindow()
   else
     let buffer_handle = s:CreateFileBuffer(path)
   endif
-  call nvim_win_set_buf(s:threeway_preview_win, buffer_handle)
+  call nvim_win_set_buf(s:state.preview.win, buffer_handle)
   call s:LockBuffer(buffer_handle)
 endfunction
