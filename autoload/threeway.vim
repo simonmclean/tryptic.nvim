@@ -6,6 +6,7 @@ let g:autoloaded_threeway = 1
 let s:state = {
   \ 'active': {
     \ 'path': '',
+    \ 'previous_path': '',
     \ 'win': '',
     \ 'buf': '',
     \ 'contents': '',
@@ -27,6 +28,7 @@ let s:state = {
 " Dictionary of path -> [buffer_handle, contents]
 let s:buffers = {}
 
+" Used to highlight the active directory in the parent window
 let s:parent_highlight_namespace = nvim_create_namespace('parent_highlight')
 
 " Special text
@@ -109,6 +111,7 @@ endfunction
 
 function! threeway#HandleMoveLeft()
   if (s:state.parent.path != "/")
+    let s:state.active.previous_path = s:state.active.path
     let s:state.active.path = s:GetParentPath(s:state.active.path)
     call s:UpdateAll()
   endif
@@ -118,6 +121,7 @@ function! threeway#HandleMoveRight()
   let pathUnderCursor = nvim_get_current_line()
   if (pathUnderCursor != s:threeway_empty_dir_text)
     if (isdirectory(pathUnderCursor))
+      let s:state.active.previous_path = s:state.active.path
       let s:state.active.path = pathUnderCursor
       call s:UpdateAll()
     else
@@ -181,6 +185,12 @@ function! s:UpdateActiveDir()
   let s:state.active.buf = buffer_handle
   call nvim_buf_clear_namespace(buffer_handle, s:parent_highlight_namespace, 0, -1)
   call nvim_win_set_buf(s:state.active.win, buffer_handle)
+  if s:state.active.previous_path != ''
+    let index_of_prev_path = index(s:state.active.contents, s:state.active.previous_path)
+    if index_of_prev_path > -1
+      execute (index_of_prev_path + 1)
+    endif
+  endif
   call s:LockBuffer(buffer_handle)
 endfunction
 
