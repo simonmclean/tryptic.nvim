@@ -27,6 +27,8 @@ let s:state = {
 " Dictionary of path -> [buffer_handle, contents]
 let s:buffers = {}
 
+let s:parent_highlight_namespace = nvim_create_namespace('parent_highlight')
+
 " Special text
 let s:threeway_empty_dir_text = "[empty directory]"
 
@@ -56,6 +58,7 @@ function! threeway#Threeway(path)
 endfunction
 
 function! s:UpdateAll()
+  " The order matters
   call s:UpdateActiveDir()
   call s:UpdateParentDir()
   call s:UpdatePreviewWindow()
@@ -176,6 +179,7 @@ function! s:UpdateActiveDir()
   let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.active.path)
   let s:state.active.contents = dir_contents
   let s:state.active.buf = buffer_handle
+  call nvim_buf_clear_namespace(buffer_handle, s:parent_highlight_namespace, 0, -1)
   call nvim_win_set_buf(s:state.active.win, buffer_handle)
   call s:LockBuffer(buffer_handle)
 endfunction
@@ -187,7 +191,7 @@ function! s:UpdateParentDir()
   let s:state.parent.contents = dir_contents
   let index_of_active_dir = index(s:state.parent.contents, s:state.active.path)
   if (index_of_active_dir > -1)
-    call nvim_buf_add_highlight(buffer_handle, -1, 'Search', index_of_active_dir, 0, -1)
+    call nvim_buf_add_highlight(buffer_handle, s:parent_highlight_namespace, 'Search', index_of_active_dir, 0, -1)
   endif
   call nvim_win_set_buf(s:state.parent.win, buffer_handle)
   call s:LockBuffer(buffer_handle)
