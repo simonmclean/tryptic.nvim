@@ -1,7 +1,7 @@
-if exists('g:autoloaded_threeway')
+if exists('g:autoloaded_tryptic')
   finish
 endif
-let g:autoloaded_threeway = 1
+let g:autoloaded_tryptic = 1
 
 let s:state = {
   \ 'active': {
@@ -9,6 +9,7 @@ let s:state = {
     \ 'previous_path': '',
     \ 'win': '',
     \ 'buf': '',
+    \ 'line_number': 0,
     \ 'contents': '',
   \},
   \ 'parent': {
@@ -32,13 +33,13 @@ let s:buffers = {}
 let s:parent_highlight_namespace = nvim_create_namespace('parent_highlight')
 
 " Special text
-let s:threeway_empty_dir_text = "[empty directory]"
+let s:tryptic_empty_dir_text = "[empty directory]"
 
-function! threeway#Threeway(path)
+function! tryptic#Tryptic(path)
   let s:state.active.path = a:path
   let s:state.target_tab = tabpagenr()
   let l:starting_file = expand('%:p')
-  " let l:content = luaeval('require("threeway").readFile('. l:starting_file .')')
+  " let l:content = luaeval('require("tryptic").readFile('. l:starting_file .')')
 
   tabnew
   let s:state.preview.win = nvim_get_current_win()
@@ -66,8 +67,8 @@ function! s:UpdateAll()
   call s:UpdatePreviewWindow()
 endfunction
 
-function! threeway#ToggleHidden()
-  let g:threeway_show_hidden_files = !g:threeway_show_hidden_files
+function! tryptic#ToggleHidden()
+  let g:tryptic_show_hidden_files = !g:tryptic_show_hidden_files
   call s:UpdateAll()
 endfunction
 
@@ -75,7 +76,7 @@ function! s:GetDirContents(path)
   " First glob returns paths that would otherwise be hidden, such as dotfiles
   let hidden_files = glob(a:path . "/.[^.]*", 1, 1)
   let non_hidden_files = globpath(a:path, '*', 1, 1)
-  if (g:threeway_show_hidden_files)
+  if (g:tryptic_show_hidden_files)
     return hidden_files + non_hidden_files
   else
     return non_hidden_files
@@ -93,23 +94,18 @@ function! s:GetParentPath(currentPath)
   endif
 endfunction
 
-function! threeway#HandleMoveDown()
-  let current_cursor_pos = nvim_win_get_cursor(0)
-  if (current_cursor_pos[0] < len(s:state.active.contents))
-    call nvim_win_set_cursor(0, [current_cursor_pos[0] + 1, current_cursor_pos[1]])
-    call s:UpdatePreviewWindow()
+function tryptic#HandleCursorMoved()
+  let current_buf = nvim_get_current_buf()
+  if (current_buf == s:state.active.buf)
+    let current_line = line('.')
+    if (current_line != s:state.active.line_number)
+      let s:state.active.line_number = current_line
+      call s:UpdatePreviewWindow()
+    endif
   endif
 endfunction
 
-function! threeway#HandleMoveUp()
-  let current_cursor_pos = nvim_win_get_cursor(0)
-  if (current_cursor_pos[0] > 1)
-    call nvim_win_set_cursor(0, [current_cursor_pos[0] - 1, current_cursor_pos[1]])
-    call s:UpdatePreviewWindow()
-  endif
-endfunction
-
-function! threeway#HandleMoveLeft()
+function! tryptic#HandleMoveLeft()
   if (s:state.parent.path != "/")
     let s:state.active.previous_path = s:state.active.path
     let s:state.active.path = s:GetParentPath(s:state.active.path)
@@ -117,9 +113,9 @@ function! threeway#HandleMoveLeft()
   endif
 endfunction
 
-function! threeway#HandleMoveRight()
+function! tryptic#HandleMoveRight()
   let pathUnderCursor = nvim_get_current_line()
-  if (pathUnderCursor != s:threeway_empty_dir_text)
+  if (pathUnderCursor != s:tryptic_empty_dir_text)
     if (isdirectory(pathUnderCursor))
       let s:state.active.previous_path = s:state.active.path
       let s:state.active.path = pathUnderCursor
@@ -144,14 +140,15 @@ function! s:CreateDirectoryBuffer(path)
     let [buffer_handle, dir_contents] = s:buffers[a:path]
   else
     let buffer_handle = nvim_create_buf(0, 1)
-    call nvim_buf_set_option(buffer_handle, 'filetype', 'threeway')
+    call nvim_buf_set_option(buffer_handle, 'filetype', 'tryptic')
     let dir_contents = s:GetDirContents(a:path)
     let dir_contents_length = len(dir_contents)
 
     if (dir_contents_length > 0)
       call nvim_buf_set_lines(buffer_handle, 0, dir_contents_length, 0, dir_contents)
+      autocmd CursorMoved <buffer> call tryptic#HandleCursorMoved()
     else
-      call nvim_buf_set_lines(buffer_handle, 0, 1, 0, [s:threeway_empty_dir_text])
+      call nvim_buf_set_lines(buffer_handle, 0, 1, 0, [s:tryptic_empty_dir_text])
     endif
 
     call nvim_buf_set_name(buffer_handle, a:path)
@@ -188,7 +185,9 @@ function! s:UpdateActiveDir()
   if s:state.active.previous_path != ''
     let index_of_prev_path = index(s:state.active.contents, s:state.active.previous_path)
     if index_of_prev_path > -1
-      execute (index_of_prev_path + 1)
+      let line_number = index_of_prev_path + 1
+      execute (line_number)
+      let s:state.active.line_number = line_number
     endif
   endif
   call s:LockBuffer(buffer_handle)
@@ -209,8 +208,8 @@ endfunction
 
 function! s:UpdatePreviewWindow()
   let path = nvim_get_current_line()
-  let g:threeway_preview_path = path
-  if (path == s:threeway_empty_dir_text)
+  let g:tryptic_preview_path = path
+  if (path == s:tryptic_empty_dir_text)
     let buffer_handle = s:CreateBlankBuffer()
   elseif (isdirectory(path))
     let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(path)
