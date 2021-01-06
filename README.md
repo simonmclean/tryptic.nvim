@@ -8,4 +8,6 @@ nnoremap <leader>- :Tryptic<CR>
 
 ## TODO
 
-- Debounce requests when moving up and down
+- Create plugin docs
+- Finish this readme
+- Figure out edge cases like the source buffer not longer existing, or generally using the plugin in unexpected ways

@@ -100,7 +100,7 @@ function tryptic#HandleCursorMoved()
     let current_line = line('.')
     if (current_line != s:state.active.line_number)
       let s:state.active.line_number = current_line
-      call s:UpdatePreviewWindow()
+      call s:ThrottledUpdatePreviewWindow.call()
     endif
   endif
 endfunction
@@ -219,3 +219,54 @@ function! s:UpdatePreviewWindow()
   call nvim_win_set_buf(s:state.preview.win, buffer_handle)
   call s:LockBuffer(buffer_handle)
 endfunction
+
+" Credit to https://github.com/dsummersl/vus for this throttle function
+function! s:Throttle(fn, wait, ...) abort
+  let l:leading = 1
+  if exists('a:1')
+    let l:leading = a:1
+  end
+
+  let l:result = {
+        \'data': {
+        \'leading': l:leading,
+        \'lastcall': 0,
+        \'lastresult': 0,
+        \'lastargs': 0,
+        \'timer_id': 0,
+        \'wait': a:wait},
+        \'fn': a:fn
+        \}
+
+  function l:result.wrap_call_fn(...) dict
+    let self.data.lastcall = reltime()
+    let self.data.lastresult = call(self.fn, self.data.lastargs)
+    let self.data.timer_id = 0
+    return self.data.lastresult
+  endfunction
+
+  function l:result.lastresult() dict
+    return self.data.lastresult
+  endfunction
+
+  function l:result.call(...) dict
+    if self.data.leading
+      let l:lastcall = self.data.lastcall
+      let l:elapsed = reltimefloat(reltime(l:lastcall))
+      if type(l:lastcall) == 0 || l:elapsed > self.data.wait / 1000.0
+        let self.data.lastargs = a:000
+        return self.wrap_call_fn()
+      endif
+    elseif self.data.timer_id == 0
+      let self.data.lastargs = a:000
+      let self.data.timer_id = timer_start(self.data.wait, self.wrap_call_fn)
+      return '<throttled>'
+    else
+      return '<throttled>'
+    endif
+    return self.data.lastresult
+  endfunction
+  return l:result
+endfunction
+
+let s:ThrottledUpdatePreviewWindow = s:Throttle(funcref('s:UpdatePreviewWindow'), 100, 0)
