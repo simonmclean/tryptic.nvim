@@ -24,6 +24,9 @@ let s:state = {
   \ 'target_tab': '',
 \}
 
+" Dictionary of path -> [buffer_handle, contents]
+let s:buffers = {}
+
 " Special text
 let s:threeway_empty_dir_text = "[empty directory]"
 
@@ -127,14 +130,25 @@ function! s:OpenFile(filePath)
 endfunction
 
 function! s:CreateDirectoryBuffer(path)
-  let buffer_handle = nvim_create_buf(0, 1)
-  call nvim_buf_set_option(buffer_handle, 'filetype', 'threeway')
-  let dir_contents = s:GetDirContents(a:path)
-  let dir_contents_length = len(dir_contents)
-  if (dir_contents_length > 0)
-    call nvim_buf_set_lines(buffer_handle, 0, dir_contents_length, 0, dir_contents)
+  let buffer_handle = 0
+  let dir_contents = []
+
+  if has_key(s:buffers, a:path)
+    let [buffer_handle, dir_contents] = s:buffers[a:path]
   else
-    call nvim_buf_set_lines(buffer_handle, 0, 1, 0, [s:threeway_empty_dir_text])
+    let buffer_handle = nvim_create_buf(0, 1)
+    call nvim_buf_set_option(buffer_handle, 'filetype', 'threeway')
+    let dir_contents = s:GetDirContents(a:path)
+    let dir_contents_length = len(dir_contents)
+
+    if (dir_contents_length > 0)
+      call nvim_buf_set_lines(buffer_handle, 0, dir_contents_length, 0, dir_contents)
+    else
+      call nvim_buf_set_lines(buffer_handle, 0, 1, 0, [s:threeway_empty_dir_text])
+    endif
+
+    call nvim_buf_set_name(buffer_handle, a:path)
+    let s:buffers[a:path] = [buffer_handle, dir_contents]
   endif
 
   return [buffer_handle, dir_contents]
@@ -161,6 +175,7 @@ endfunction
 function! s:UpdateActiveDir()
   let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.active.path)
   let s:state.active.contents = dir_contents
+  let s:state.active.buf = buffer_handle
   call nvim_win_set_buf(s:state.active.win, buffer_handle)
   call s:LockBuffer(buffer_handle)
 endfunction
@@ -168,6 +183,7 @@ endfunction
 function! s:UpdateParentDir()
   let s:state.parent.path = s:GetParentPath(s:state.active.path)
   let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.parent.path)
+  let s:state.parent.buf = buffer_handle
   let s:state.parent.contents = dir_contents
   let index_of_active_dir = index(s:state.parent.contents, s:state.active.path)
   if (index_of_active_dir > -1)
