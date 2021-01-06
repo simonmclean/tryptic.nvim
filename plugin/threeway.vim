@@ -15,9 +15,15 @@ augroup threeway
   autocmd VimEnter * if exists('#FileExplorer') | exe 'au! FileExplorer *' | endif
   autocmd VimEnter * if exists('#NERDTreeHijackNetrw') | exe 'au! NERDTreeHijackNetrw *' | endif
 
+  " Navigation
   autocmd FileType threeway nnoremap <silent> <buffer> h :call threeway#HandleMoveLeft()<cr>
   autocmd FileType threeway nnoremap <silent> <buffer> j :call threeway#HandleMoveDown()<cr>
   autocmd FileType threeway nnoremap <silent> <buffer> k :call threeway#HandleMoveUp()<cr>
   autocmd FileType threeway nnoremap <silent> <buffer> l :call threeway#HandleMoveRight()<cr>
+
+  " Toggles
   autocmd FileType threeway nnoremap <silent> <buffer> <leader>. :call threeway#ToggleHidden()<cr>
+
+  " Exit
+  autocmd FileType threeway nnoremap <silent> <buffer> q :tabclose<cr>
 augroup END
