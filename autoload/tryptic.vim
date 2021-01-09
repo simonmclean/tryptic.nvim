@@ -24,6 +24,7 @@ let s:state = {
     \ 'buf': '',
   \},
   \ 'target_tab': '',
+  \ 'arglist': []
 \}
 
 " Dictionary of path -> [buffer_handle, contents]
@@ -39,7 +40,6 @@ function! tryptic#Tryptic(path)
   let s:state.active.path = a:path
   let s:state.target_tab = tabpagenr()
   let l:starting_file = expand('%:p')
-  " let l:content = luaeval('require("tryptic").readFile('. l:starting_file .')')
 
   tabnew
   let s:state.preview.win = nvim_get_current_win()
@@ -54,6 +54,7 @@ function! tryptic#Tryptic(path)
     call nvim_win_set_option(l:win, 'concealcursor', 'n')
   endfor
 
+  arglocal!
   call nvim_set_current_win(s:state.active.win)
   call s:UpdateAll(0)
 
@@ -69,6 +70,20 @@ endfunction
 
 function! tryptic#Refresh()
   call s:UpdateAll(1)
+endfunction
+
+function! tryptic#ToggleArglist()
+  let path = nvim_get_current_line()
+  let index_in_arglist = index(s:state.arglist, path)
+  if (index_in_arglist < 0)
+    call insert(s:state.arglist, path)
+  else
+    call remove(s:state.arglist, index_in_arglist)
+  endif
+  echo s:state.arglist
+  for arg in s:state.arglist
+    execute 'argadd' . fnameescape(arg)
+  endfor
 endfunction
 
 function! tryptic#ToggleHidden()

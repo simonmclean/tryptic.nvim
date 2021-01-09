@@ -24,6 +24,9 @@ augroup tryptic
   " Toggles
   autocmd FileType tryptic nnoremap <silent> <buffer> <leader>. :call tryptic#ToggleHidden()<cr>
 
+  " Arglist
+  autocmd FileType tryptic nnoremap <silent> <buffer> x :call tryptic#ToggleArglist()<cr>
+
   " Exit
   autocmd FileType tryptic nnoremap <silent> <buffer> q :tabclose<cr>
 augroup END
