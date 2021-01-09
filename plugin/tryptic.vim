@@ -15,6 +15,8 @@ augroup tryptic
   autocmd VimEnter * if exists('#FileExplorer') | exe 'au! FileExplorer *' | endif
   autocmd VimEnter * if exists('#NERDTreeHijackNetrw') | exe 'au! NERDTreeHijackNetrw *' | endif
 
+  autocmd FileType tryptic nnoremap <silent> <buffer> R :call tryptic#Refresh()<cr>
+
   " Navigation
   autocmd FileType tryptic nnoremap <silent> <buffer> h :call tryptic#HandleMoveLeft()<cr>
   autocmd FileType tryptic nnoremap <silent> <buffer> l :call tryptic#HandleMoveRight()<cr>

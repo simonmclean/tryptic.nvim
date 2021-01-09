@@ -55,21 +55,25 @@ function! tryptic#Tryptic(path)
   endfor
 
   call nvim_set_current_win(s:state.active.win)
-  call s:UpdateAll()
+  call s:UpdateAll(0)
 
   call search(l:starting_file)
 endfunction
 
-function! s:UpdateAll()
+function! s:UpdateAll(force_refresh)
   " The order matters
-  call s:UpdateActiveDir()
-  call s:UpdateParentDir()
-  call s:UpdatePreviewWindow()
+  call s:UpdateActiveDir(a:force_refresh)
+  call s:UpdateParentDir(a:force_refresh)
+  call s:UpdatePreviewWindow(a:force_refresh)
+endfunction
+
+function! tryptic#Refresh()
+  call s:UpdateAll(1)
 endfunction
 
 function! tryptic#ToggleHidden()
   let g:tryptic_show_hidden_files = !g:tryptic_show_hidden_files
-  call s:UpdateAll()
+  call s:UpdateAll(1)
 endfunction
 
 function! s:GetDirContents(path)
@@ -109,7 +113,7 @@ function! tryptic#HandleMoveLeft()
   if (s:state.parent.path != "/")
     let s:state.active.previous_path = s:state.active.path
     let s:state.active.path = s:GetParentPath(s:state.active.path)
-    call s:UpdateAll()
+    call s:UpdateAll(0)
   endif
 endfunction
 
@@ -119,7 +123,7 @@ function! tryptic#HandleMoveRight()
     if (isdirectory(pathUnderCursor))
       let s:state.active.previous_path = s:state.active.path
       let s:state.active.path = pathUnderCursor
-      call s:UpdateAll()
+      call s:UpdateAll(0)
     else
       call s:OpenFile(pathUnderCursor)
     endif
@@ -132,14 +136,24 @@ function! s:OpenFile(filePath)
   execute "edit" . a:filePath
 endfunction
 
-function! s:CreateDirectoryBuffer(path)
+function! s:CreateDirectoryBuffer(path, force_refresh)
   let buffer_handle = 0
   let dir_contents = []
+  let buffer_exists = has_key(s:buffers, a:path)
+  let refreshing = buffer_exists && a:force_refresh
 
-  if has_key(s:buffers, a:path)
+  if buffer_exists && !refreshing
     let [buffer_handle, dir_contents] = s:buffers[a:path]
   else
-    let buffer_handle = nvim_create_buf(0, 1)
+    if refreshing
+      let buffer_handle = s:buffers[a:path][0]
+      call nvim_buf_set_option(buffer_handle, 'readonly', v:false)
+      call nvim_buf_set_option(buffer_handle, 'modifiable', v:true)
+      call nvim_buf_set_lines(buffer_handle, 0, -1, 0, [])
+    else
+      let buffer_handle = nvim_create_buf(0, 1)
+    endif
+
     call nvim_buf_set_option(buffer_handle, 'filetype', 'tryptic')
     let dir_contents = s:GetDirContents(a:path)
     let dir_contents_length = len(dir_contents)
@@ -151,7 +165,10 @@ function! s:CreateDirectoryBuffer(path)
       call nvim_buf_set_lines(buffer_handle, 0, 1, 0, [s:tryptic_empty_dir_text])
     endif
 
-    call nvim_buf_set_name(buffer_handle, a:path)
+    if !refreshing
+      call nvim_buf_set_name(buffer_handle, a:path)
+    endif
+
     let s:buffers[a:path] = [buffer_handle, dir_contents]
   endif
 
@@ -176,8 +193,14 @@ endfunction
 " Assumes that s:state.active.path has been updated
 " TODO: Maybe pass in and set the value, rather than assuming it's already
 " been set
-function! s:UpdateActiveDir()
-  let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.active.path)
+function! s:UpdateActiveDir(force_refresh)
+  let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.active.path, a:force_refresh)
+  if a:force_refresh
+    " Restore current line
+    execute s:state.active.line_number
+    " Save new line number as it might not be same
+    let s:state.active.line_number
+  endif
   let s:state.active.contents = dir_contents
   let s:state.active.buf = buffer_handle
   call nvim_buf_clear_namespace(buffer_handle, s:parent_highlight_namespace, 0, -1)
@@ -193,9 +216,9 @@ function! s:UpdateActiveDir()
   call s:LockBuffer(buffer_handle)
 endfunction
 
-function! s:UpdateParentDir()
+function! s:UpdateParentDir(force_refresh)
   let s:state.parent.path = s:GetParentPath(s:state.active.path)
-  let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.parent.path)
+  let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(s:state.parent.path, a:force_refresh)
   let s:state.parent.buf = buffer_handle
   let s:state.parent.contents = dir_contents
   let index_of_active_dir = index(s:state.parent.contents, s:state.active.path)
@@ -206,13 +229,13 @@ function! s:UpdateParentDir()
   call s:LockBuffer(buffer_handle)
 endfunction
 
-function! s:UpdatePreviewWindow()
+function! s:UpdatePreviewWindow(force_refresh)
   let path = nvim_get_current_line()
   let g:tryptic_preview_path = path
   if (path == s:tryptic_empty_dir_text)
     let buffer_handle = s:CreateBlankBuffer()
   elseif (isdirectory(path))
-    let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(path)
+    let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(path, a:force_refresh)
   else
     let buffer_handle = s:CreateFileBuffer(path)
   endif
@@ -269,4 +292,4 @@ function! s:Throttle(fn, wait, ...) abort
   return l:result
 endfunction
 
-let s:ThrottledUpdatePreviewWindow = s:Throttle(funcref('s:UpdatePreviewWindow'), 100, 0)
+let s:ThrottledUpdatePreviewWindow = s:Throttle(funcref('s:UpdatePreviewWindow', [0]), 100, 0)
