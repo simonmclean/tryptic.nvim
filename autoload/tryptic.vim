@@ -66,6 +66,9 @@ function! s:UpdateAll(force_refresh)
   call s:UpdateActiveDir(a:force_refresh)
   call s:UpdateParentDir(a:force_refresh)
   call s:UpdatePreviewWindow(a:force_refresh)
+  " TODO: This can result in the autocmd being attached to the same buffer
+  " multiple times. Not a big deal in practice, but should be fixed.
+  autocmd CursorMoved <buffer> call tryptic#HandleCursorMoved()
 endfunction
 
 function! tryptic#Refresh()
@@ -175,7 +178,6 @@ function! s:CreateDirectoryBuffer(path, force_refresh)
 
     if (dir_contents_length > 0)
       call nvim_buf_set_lines(buffer_handle, 0, dir_contents_length, 0, dir_contents)
-      autocmd CursorMoved <buffer> call tryptic#HandleCursorMoved()
     else
       call nvim_buf_set_lines(buffer_handle, 0, 1, 0, [s:tryptic_empty_dir_text])
     endif
