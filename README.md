@@ -37,7 +37,7 @@ Should work by whatever means you normally install plugins.
 For example with vim-plug, add the following to your `.vimrc`.
 
 ```
-Plug 'simonmclean/tryptic'
+Plug 'simonmclean/tryptic.nvim'
 ```
 
 Then do `:source ~/.vimrc` and `:PlugInstall`.
