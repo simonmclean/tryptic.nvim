@@ -1,20 +1,20 @@
 # tryptic.nvim
 
-Directory viewer inspired by [Ranger](https://github.com/ranger/ranger) and [dirvish.vim](https://github.com/justinmk/vim-dirvish):
+Directory viewer inspired by [Ranger](https://github.com/ranger/ranger) and [dirvish.vim](https://github.com/justinmk/vim-dirvish).
 
-The UI opens in a new tab and consists of 3 buffers.
+The UI opens in a new tab and consists of 3 buffers:
 
 - The parent directory on the left
 - The current directory in the middle
 - The child directory or file preview on the right
 
-Use `j` and `k` (or any other motions, `G`,  `gg`, `/` etc) to navigate within the current directory.
+Use `j` and `k` (or any other motions like `G`,  `gg`, `/` etc) to navigate within the current directory.
 Use `h` and `l` to switch to the parent or child directories respectively. If the buffer on the right is a file, then pressing `l` will close Tryptic
 and open that file in the buffer you were just in. _You always control the middle column_.
 
 The advantage of this over other plugins like Netrw and Dirvish is that it provides context, which is missing when you can only see one directory at a time.
 
-## Concepts
+## Borrowed concepts
 
 This plugin borrows 3 good ideas from [dirvish.vim](https://github.com/justinmk/vim-dirvish). Specifically that
 
@@ -69,4 +69,4 @@ autocmd FileType tryptic nnoremap <silent> <buffer> R :call tryptic#Refresh()<cr
 
 - Maybe add trailing `/` to distinguish folders
 - Create plugin docs
-- There's probably of wierd behaviour that would result from using the plugin in unexpected ways
+- There's probably a bunch of wierd behaviour that would result from using the plugin in unexpected ways
