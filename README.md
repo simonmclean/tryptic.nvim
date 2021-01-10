@@ -50,21 +50,26 @@ Tryptic doesn't come with any default keybindings, so add the following to your 
 " Launch Tryptic
 nnoremap <leader>- :Tryptic<cr>
 
-" Navigation
-autocmd FileType tryptic nnoremap <silent> <buffer> h :call tryptic#HandleMoveLeft()<cr>
-autocmd FileType tryptic nnoremap <silent> <buffer> l :call tryptic#HandleMoveRight()<cr>
+augroup TrypticBindings
+  autocmd!
 
-" Close Tryptic
-autocmd FileType tryptic nnoremap <silent> <buffer> q :tabclose<cr>
+  " Navigation
+  autocmd FileType tryptic nnoremap <silent> <buffer> h :call tryptic#HandleMoveLeft()<cr>
+  autocmd FileType tryptic nnoremap <silent> <buffer> l :call tryptic#HandleMoveRight()<cr>
 
-" Toggle hidden files
-autocmd FileType tryptic nnoremap <silent> <buffer> <leader>. :call tryptic#ToggleHidden()<cr>
+  " Close Tryptic
+  autocmd FileType tryptic nnoremap <silent> <buffer> q :tabclose<cr>
 
-" Add or remove from arglist
-autocmd FileType tryptic nnoremap <silent> <buffer> x :call tryptic#ToggleArglist()<cr>
+  " Toggle hidden files
+  autocmd FileType tryptic nnoremap <silent> <buffer> <leader>. :call tryptic#ToggleHidden()<cr>
 
-" Refresh view
-autocmd FileType tryptic nnoremap <silent> <buffer> R :call tryptic#Refresh()<cr>
+  " Add or remove from arglist
+  autocmd FileType tryptic nnoremap <silent> <buffer> x :call tryptic#ToggleArglist()<cr>
+
+  " Refresh view
+  autocmd FileType tryptic nnoremap <silent> <buffer> R :call tryptic#Refresh()<cr>
+
+augroup END
 ```
 
 ## TODO
