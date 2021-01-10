@@ -14,19 +14,4 @@ augroup tryptic
   " TODO: Either remove divish handlers, or add a note to the readme
   autocmd VimEnter * if exists('#FileExplorer') | exe 'au! FileExplorer *' | endif
   autocmd VimEnter * if exists('#NERDTreeHijackNetrw') | exe 'au! NERDTreeHijackNetrw *' | endif
-
-  autocmd FileType tryptic nnoremap <silent> <buffer> R :call tryptic#Refresh()<cr>
-
-  " Navigation
-  autocmd FileType tryptic nnoremap <silent> <buffer> h :call tryptic#HandleMoveLeft()<cr>
-  autocmd FileType tryptic nnoremap <silent> <buffer> l :call tryptic#HandleMoveRight()<cr>
-
-  " Toggles
-  autocmd FileType tryptic nnoremap <silent> <buffer> <leader>. :call tryptic#ToggleHidden()<cr>
-
-  " Arglist
-  autocmd FileType tryptic nnoremap <silent> <buffer> x :call tryptic#ToggleArglist()<cr>
-
-  " Exit
-  autocmd FileType tryptic nnoremap <silent> <buffer> q :tabclose<cr>
 augroup END
