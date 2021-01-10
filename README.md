@@ -2,6 +2,8 @@
 
 Directory viewer inspired by [Ranger](https://github.com/ranger/ranger) and [dirvish.vim](https://github.com/justinmk/vim-dirvish).
 
+![](tryptic.gif)
+
 The UI opens in a new tab and consists of 3 buffers:
 
 - The parent directory on the left
@@ -67,6 +69,7 @@ autocmd FileType tryptic nnoremap <silent> <buffer> R :call tryptic#Refresh()<cr
 
 ## TODO
 
+- Refactor so that state is per instance
 - Maybe add trailing `/` to distinguish folders
 - Create plugin docs
 - There's probably a bunch of wierd behaviour that would result from using the plugin in unexpected ways
