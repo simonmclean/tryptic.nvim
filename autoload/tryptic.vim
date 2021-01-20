@@ -137,7 +137,8 @@ endfunction
 
 function! tryptic#HandleMoveRight()
   let pathUnderCursor = nvim_get_current_line()
-  if (pathUnderCursor != s:tryptic_empty_dir_text)
+  let pathExists = s:PathExists(pathUnderCursor)
+  if (pathExists)
     if (isdirectory(pathUnderCursor))
       let s:state.active.previous_path = s:state.active.path
       let s:state.active.path = pathUnderCursor
@@ -145,7 +146,13 @@ function! tryptic#HandleMoveRight()
     else
       call s:OpenFile(pathUnderCursor)
     endif
+  else
+    echo("Path does not exist: " . pathUnderCursor)
   endif
+endfunction
+
+function! s:PathExists(path)
+  return !empty(glob(a:path))
 endfunction
 
 function! s:OpenFile(filePath)
@@ -248,8 +255,9 @@ endfunction
 
 function! s:UpdatePreviewWindow(force_refresh)
   let path = nvim_get_current_line()
-  let g:tryptic_preview_path = path
-  if (path == s:tryptic_empty_dir_text)
+  let s:state.preview.path = path
+  if (!s:PathExists(path))
+    echo("Path does not exist: " . path)
     let buffer_handle = s:CreateBlankBuffer()
   elseif (isdirectory(path))
     let [buffer_handle, dir_contents] = s:CreateDirectoryBuffer(path, a:force_refresh)
